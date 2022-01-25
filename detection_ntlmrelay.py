@@ -20,6 +20,7 @@ def welcome(text):
     return colored.cyan(result.renderText(text))
 
 def get_network_interfaces() -> List:
+    # source:https://www.programcreek.com/python/?CodeExample=get+network+interfaces
     # find the network interfaces present on the system
     interfaces = []
     interfaces_details = []
@@ -57,14 +58,6 @@ def get_authinfo(layer):
     hostname = layer.ntlmssp_auth_hostname
     ntresponse = layer.ntlmssp_auth_ntresponse
     return hostname, ntresponse
-
-def file_analysis(filepath):
-    capture = pyshark.FileCapture(filepath, display_filter="ntlmssp.ntlmserverchallenge and http")
-    packet = capture[0]
-    print(get_challengeinfo(packet.http))
-    test = packet.http.ntlmssp_ntlmserverchallenge
-    print(test)
-    time.sleep(30)
 
 def determ_ntlmtype(layer):
     if layer.ntlmssp_messagetype == '0x00000001':
@@ -120,6 +113,12 @@ def dectection_ntlm_traffic(packet):
         if not valid_computer:
             print("DIKKEE MUDDD")
 
+def file_analysis(filepath):
+    capture = pyshark.FileCapture(filepath, display_filter="ntlmssp")
+    for packet in capture:
+        dectection_ntlm_traffic(packet)
+    print("File analysed")
+
 def capture_live_analysis(chosen_interface):
     os.system("clear")
     print(welcome("NTLM Relay Detector"))
@@ -152,10 +151,10 @@ def main():
                 print(welcome("NTLM Relay Detector"))
                 filepath = input("Enter file path:")
                 file_analysis(filepath)
-                time.sleep(30)
+                time.sleep(5)
             except Exception as err:
                 print("File analysis failed - {}".format(err))
-                time.sleep(20)
+                time.sleep(5)
         elif c == '2':
             try:
                 os.system("clear")

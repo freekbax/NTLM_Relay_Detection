@@ -61,22 +61,29 @@ def file_analysis(filepath):
     test = packet.http.ntlmssp_ntlmserverchallenge
     print(test)
     time.sleep(30)
+
+def determ_ntlmtype(layer):
+    if layer.ntlmssp_messagetype == '0x00000001':
+        return 'negotiate'
+    elif layer.ntlmssp_messagetype == '0x00000002':
+        return 'challenge'
+    elif layer.ntlmssp_messagetype == '0x00000003':
+        return 'auth'
+
 def locate_ntlmssp(packet):
     for layer in packet.layers:
             if 'ntlmssp_identifier'in layer.field_names:
-                print("found")
                 return layer
 
 def capture_live_analysis(chosen_interface):
     os.system("clear")
     print(welcome("NTLM Relay Detector"))
     print("Starting the live capture for NTLM traffic on {}:".format(chosen_interface))
-
     try: 
         capture = pyshark.LiveCapture(interface=chosen_interface, display_filter='ntlmssp')
         for packet in capture.sniff_continuously(packet_count=200):
             ntlmssp_layer = locate_ntlmssp(packet)
-            print(ntlmssp_layer)
+            print(determ_ntlmtype(ntlmssp_layer))
     except Exception as err:
             print("Capturing of live traffic went wrong - {}".format(err))
             time.sleep(5)

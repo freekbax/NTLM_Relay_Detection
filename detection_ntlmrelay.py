@@ -104,14 +104,14 @@ def dectection_ntlm_traffic(packet):
         source, dest = get_src_dst_ip(packet)
         challenge = get_challengeinfo(layer)
         if not detect_double_challenge(challenge, source):
-            print("DOUBLE TROUBLE")
+            print("DOUBLE TROUBLE, de relay aanvaller zit op ip:", source)
     elif ntlmtype == 'auth':
         print('authentication detected')
         source, dest = get_src_dst_ip(packet)
         hostname, ntresponse = get_authinfo(layer)
         valid_computer = validate_hostname_ip(hostname, source)
         if not valid_computer:
-            print("DIKKEE MUDDD")
+            print("DIKKEE MUDDD, de eikel die aanvalt zit op ip:", source)
 
 def file_analysis(filepath):
     capture = pyshark.FileCapture(filepath, display_filter="ntlmssp")

@@ -48,6 +48,28 @@ def file_analysis(filepath):
     test = packet.http.ntlmssp_ntlmserverchallenge
     print(test)
     time.sleep(30)
+def locate_ntlmssp(packet):
+    for layer in packet.layers:
+            if 'ntlmssp_identifier'in layer.field_names:
+                print("found")
+                return layer
+
+def capture_live_analysis(chosen_interface):
+    os.system("clear")
+    print(welcome("NTLM Relay Detector"))
+    print("Starting the live capture for NTLM traffic on {}:".format(chosen_interface))
+
+    try: 
+        capture = pyshark.LiveCapture(interface=chosen_interface, display_filter='ntlmssp')
+        for packet in capture.sniff_continuously(packet_count=200):
+            ntlmssp_layer = locate_ntlmssp(packet)
+            print(ntlmssp_layer)
+    except Exception as err:
+            print("Capturing of live traffic went wrong - {}".format(err))
+            time.sleep(5)
+            exit()
+    print("End of the capture")
+
 
 def main():
     while True:
@@ -81,13 +103,11 @@ def main():
                 for interface in interfaces:
                     print(str(count) + " : "+ str(interface[0]))
                     count += 1
-                c = input("\nEnter your choice : ")
+                c_interface = input("\nEnter your choice : ")
 
-                # print("Starting the live capture on eno2:")
-                # capture = pyshark.LiveCapture(interface='eno2', display_filter='ntlmssp.ntlmserverchallenge' )
-                # for packet in capture.sniff_continuously(packet_count=80):
-                #     print(packet)
-                time.sleep(5)
+
+                capture_live_analysis(str(interfaces[int(c_interface)][0]))
+                print("do not come here")
             except Exception as err:
                 print("Live analysis failed - {}".format(err))
                 time.sleep(5)
@@ -98,4 +118,4 @@ def main():
         os.system("clear")
 
 if __name__ == "__main__":
-    main() 
+    main()

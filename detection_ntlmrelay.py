@@ -40,11 +40,24 @@ def get_network_interfaces() -> List:
         interfaces_details.append(interface_output_list)
     return interfaces_details
 
+def get_src_dst_ip(packet):
+    source = packet.ip.src
+    destination = packet.ip.dst
+    return source, destination
+
+def get_challengeinfo(layer):
+    challenge = layer.ntlmssp_ntlmserverchallenge
+    return challenge
+
+def get_authinfo(layer):
+    hostname = layer.ntlmssp_auth_hostname
+    ntresponse = layer.ntlmssp_auth_ntresponse
+    return hostname, ntresponse
 
 def file_analysis(filepath):
     capture = pyshark.FileCapture(filepath, display_filter="ntlmssp.ntlmserverchallenge and http")
     packet = capture[0]
-    print(packet.highest_layer)
+    print(get_challengeinfo(packet.http))
     test = packet.http.ntlmssp_ntlmserverchallenge
     print(test)
     time.sleep(30)

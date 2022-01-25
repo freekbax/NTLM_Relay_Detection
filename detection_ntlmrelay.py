@@ -3,6 +3,7 @@
 from ast import List
 from itertools import count
 from queue import PriorityQueue
+import re
 import subprocess
 import time
 import os
@@ -10,6 +11,9 @@ import os.path
 import pyshark
 from pyfiglet import Figlet
 from clint.textui import colored
+
+GLOBAL_computers = {'10.0.0.20' : 'WIN10-CLIENT', '10.0.0.5' : 'NTLMserver' , '10.0.0.10' : 'DC1'}
+GLOBAL_challenges = {}
 
 def welcome(text):
     result = Figlet()
@@ -70,10 +74,51 @@ def determ_ntlmtype(layer):
     elif layer.ntlmssp_messagetype == '0x00000003':
         return 'auth'
 
-def locate_ntlmssp(packet):
+def locate_ntlmssp_layer(packet):
     for layer in packet.layers:
             if 'ntlmssp_identifier'in layer.field_names:
                 return layer
+
+def validate_hostname_ip(hostname, ip):
+    if hostname == 'NULL' or ip == 'NULL':
+        return 0
+    else:
+        if GLOBAL_computers.get(ip)==hostname:
+            return True
+        else:
+            return False
+
+def detect_double_challenge(challenge, ip):
+    if challenge in GLOBAL_challenges:
+        if GLOBAL_challenges.get(challenge)==ip:
+            return True
+        else:
+            return False
+    else:
+        GLOBAL_challenges[challenge]=ip
+        return True
+        
+
+def dectection_ntlm_traffic(packet):
+    layer = locate_ntlmssp_layer(packet)
+    ntlmtype = determ_ntlmtype(layer)
+
+    if ntlmtype == 'negotiate':
+        print("negatiate detected")
+        source, dest = get_src_dst_ip(packet)
+    elif ntlmtype == 'challenge':
+        print('challenge detected')
+        source, dest = get_src_dst_ip(packet)
+        challenge = get_challengeinfo(layer)
+        if not detect_double_challenge(challenge, source):
+            print("DOUBLE TROUBLE")
+    elif ntlmtype == 'auth':
+        print('authentication detected')
+        source, dest = get_src_dst_ip(packet)
+        hostname, ntresponse = get_authinfo(layer)
+        valid_computer = validate_hostname_ip(hostname, source)
+        if not valid_computer:
+            print("DIKKEE MUDDD")
 
 def capture_live_analysis(chosen_interface):
     os.system("clear")
@@ -82,8 +127,7 @@ def capture_live_analysis(chosen_interface):
     try: 
         capture = pyshark.LiveCapture(interface=chosen_interface, display_filter='ntlmssp')
         for packet in capture.sniff_continuously(packet_count=200):
-            ntlmssp_layer = locate_ntlmssp(packet)
-            print(determ_ntlmtype(ntlmssp_layer))
+            dectection_ntlm_traffic(packet)
     except Exception as err:
             print("Capturing of live traffic went wrong - {}".format(err))
             time.sleep(5)
@@ -118,7 +162,6 @@ def main():
                 print(welcome("NTLM Relay Detector"))
                 interfaces = get_network_interfaces()
                 count = 0
-                print(interfaces[0][0])
                 print("Please select an interfaces ")
                 for interface in interfaces:
                     print(str(count) + " : "+ str(interface[0]))
@@ -127,7 +170,7 @@ def main():
 
 
                 capture_live_analysis(str(interfaces[int(c_interface)][0]))
-                print("do not come here")
+                
             except Exception as err:
                 print("Live analysis failed - {}".format(err))
                 time.sleep(5)

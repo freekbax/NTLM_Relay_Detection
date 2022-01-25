@@ -40,6 +40,15 @@ def get_network_interfaces() -> List:
         interfaces_details.append(interface_output_list)
     return interfaces_details
 
+
+def file_analysis(filepath):
+    capture = pyshark.FileCapture(filepath, display_filter="ntlmssp.ntlmserverchallenge and http")
+    packet = capture[0]
+    print(packet.highest_layer)
+    test = packet.http.ntlmssp_ntlmserverchallenge
+    print(test)
+    time.sleep(30)
+
 def main():
     while True:
         os.system("clear")
@@ -55,10 +64,12 @@ def main():
             try:
                 os.system("clear")
                 print(welcome("NTLM Relay Detector"))
-                print("nothing here jet")
-                time.sleep(5)
+                filepath = input("Enter file path:")
+                file_analysis(filepath)
+                time.sleep(30)
             except Exception as err:
                 print("File analysis failed - {}".format(err))
+                time.sleep(20)
         elif c == '2':
             try:
                 os.system("clear")

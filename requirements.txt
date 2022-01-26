@@ -2,3 +2,4 @@ pyfiglet
 pyshark
 tshark
 clint
+tabulate

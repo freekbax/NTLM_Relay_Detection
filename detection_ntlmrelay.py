@@ -17,7 +17,7 @@ GLOBAL_computers = {'10.0.0.20': 'WIN10-CLIENT',
                     '10.0.0.5': 'NTLMserver', '10.0.0.10': 'DC1'}
 GLOBAL_challenges = {}
 GLOBAL_alerts = []
-
+GLOBAL_detectioncount = 1
 
 def welcome(text):
     result = Figlet()
@@ -115,14 +115,16 @@ def detect_ntlmrelayx(challenge):
 
 
 def print_alerts():
-    head = ["Detection", "Attacker IP", "Target", "Protocol"]
+    head = ["No.", "Detection", "Attacker IP", "Target", "Protocol"]
     os.system("clear")
     print(welcome("NTLM Relay Detector"))
     print(tabulate(GLOBAL_alerts, headers=head, tablefmt="grid"))
 
 
 def add_alert(type, source, target, protocol):
-    GLOBAL_alerts.append((type, source, target, protocol))
+    global GLOBAL_detectioncount
+    GLOBAL_alerts.append((GLOBAL_detectioncount, type, source, target, protocol))
+    GLOBAL_detectioncount += 1  
     print_alerts()
 
 
@@ -157,6 +159,8 @@ def file_analysis(filepath):
     for packet in capture:
         dectection_ntlm_traffic(packet)
     print("File analysed")
+    time.sleep(10)
+
 
 
 def capture_live_analysis(chosen_interface):
